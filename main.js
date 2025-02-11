@@ -24,34 +24,58 @@ app.get("/tasks", async (req, res) => {
 });
 
 app.get("/tasks/:id", async (req, res) => {
-  const task = await Task.findById(req.params.id);
-  if (task) {
-    res.send(task);
-  } else {
-    res.status(404).send({ message: "Cannot find given id" });
+  try {
+    const task = await Task.findById(req.params.id);
+    if (task) {
+      res.send(task);
+    } else {
+      res.status(404).send({ message: "Cannot find given id" });
+    }
+  } catch (e) {
+    if (e.name === "CastError") {
+      res.status(404).send({ message: "Cannot find given id" });
+    } else {
+      res.status(500).send({ message: e.message });
+    }
   }
 });
 
 app.patch("/tasks/:id", async (req, res) => {
-  const task = await Task.findById(req.params.id);
-  if (task) {
-    const data = req.body;
-    Object.keys(data).forEach((key) => {
-      task[key] = data[key];
-    });
-    await task.save();
-    res.send(task);
-  } else {
-    res.status(404).send({ message: "Cannot find given id" });
+  try {
+    const task = await Task.findById(req.params.id);
+    if (task) {
+      const data = req.body;
+      Object.keys(data).forEach((key) => {
+        task[key] = data[key];
+      });
+      await task.save();
+      res.send(task);
+    } else {
+      res.status(404).send({ message: "Cannot find given id" });
+    }
+  } catch (e) {
+    if (e.name === "CastError") {
+      res.status(404).send({ message: "Cannot find given id" });
+    } else {
+      res.status(500).send({ message: e.message });
+    }
   }
 });
 
 app.delete("/tasks/:id", async (req, res) => {
-  const task = await Task.findByIdAndDelete(req.params.id);
-  if (task) {
-    res.sendStatus(200);
-  } else {
-    res.status(404).send({ message: "Cannot find given id" });
+  try {
+    const task = await Task.findByIdAndDelete(req.params.id);
+    if (task) {
+      res.sendStatus(200);
+    } else {
+      res.status(404).send({ message: "Cannot find given id" });
+    }
+  } catch (e) {
+    if (e.name === "CastError") {
+      res.status(404).send({ message: "Cannot find given id" });
+    } else {
+      res.status(500).send({ message: e.message });
+    }
   }
 });
 
