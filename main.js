@@ -8,10 +8,32 @@ app.use(express.json());
 
 await mongoose.connect(DATABASE_URL);
 
+function asyncHandler(handler) {
+  return async function (req, res) {
+    try {
+      await handler(req, res);
+    } catch (e) {
+      if (e.name === "CastError") {
+        res.status(404).send({ message: "Cannot find given id" });
+      } else if (e.name === "ValidationError") {
+        res.status(400).send({ message: e.message });
+      } else {
+        res.status(500).send({ message: e.message });
+      }
+    }
+  };
+}
+
 app.post("/tasks", async (req, res) => {
-  const data = req.body;
-  const newTask = await Task.create(data);
-  res.status(201).send(newTask);
+  try {
+    const data = req.body;
+    const newTask = await Task.create(data);
+    res.status(201).send(newTask);
+  } catch (e) {
+    if (e.name === "ValidationError") {
+      res.status(400).send({ message: e.message });
+    }
+  }
 });
 
 app.get("/tasks", async (req, res) => {
@@ -23,25 +45,21 @@ app.get("/tasks", async (req, res) => {
   res.send(tasks);
 });
 
-app.get("/tasks/:id", async (req, res) => {
-  try {
+app.get(
+  "/tasks/:id",
+  asyncHandler(async (req, res) => {
     const task = await Task.findById(req.params.id);
     if (task) {
       res.send(task);
     } else {
       res.status(404).send({ message: "Cannot find given id" });
     }
-  } catch (e) {
-    if (e.name === "CastError") {
-      res.status(404).send({ message: "Cannot find given id" });
-    } else {
-      res.status(500).send({ message: e.message });
-    }
-  }
-});
+  })
+);
 
-app.patch("/tasks/:id", async (req, res) => {
-  try {
+app.patch(
+  "/tasks/:id",
+  asyncHandler(async (req, res) => {
     const task = await Task.findById(req.params.id);
     if (task) {
       const data = req.body;
@@ -53,30 +71,19 @@ app.patch("/tasks/:id", async (req, res) => {
     } else {
       res.status(404).send({ message: "Cannot find given id" });
     }
-  } catch (e) {
-    if (e.name === "CastError") {
-      res.status(404).send({ message: "Cannot find given id" });
-    } else {
-      res.status(500).send({ message: e.message });
-    }
-  }
-});
+  })
+);
 
-app.delete("/tasks/:id", async (req, res) => {
-  try {
+app.delete(
+  "/tasks/:id",
+  asyncHandler(async (req, res) => {
     const task = await Task.findByIdAndDelete(req.params.id);
     if (task) {
       res.sendStatus(200);
     } else {
       res.status(404).send({ message: "Cannot find given id" });
     }
-  } catch (e) {
-    if (e.name === "CastError") {
-      res.status(404).send({ message: "Cannot find given id" });
-    } else {
-      res.status(500).send({ message: e.message });
-    }
-  }
-});
+  })
+);
 
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
